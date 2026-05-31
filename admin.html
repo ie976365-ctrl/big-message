@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Big Message Control Panel</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --panel: rgba(255, 255, 255, 0.88);
+      --ink: #172028;
+      --muted: #5e6873;
+      --line: rgba(23, 32, 40, 0.12);
+      --accent: #d65a37;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(214, 90, 55, 0.16), transparent 22rem),
+        linear-gradient(135deg, #f7efe5 0%, #dff2ed 55%, #f9ddd2 100%);
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .layout {
+      width: min(1100px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 18px 0 24px;
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel,
+    .preview {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: 0 20px 50px rgba(23, 32, 40, 0.1);
+      backdrop-filter: blur(16px);
+    }
+
+    .panel {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    h1,
+    p {
+      margin: 0;
+    }
+
+    .lead {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label,
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      min-height: 46px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .preview {
+      position: relative;
+      overflow: hidden;
+      min-height: 680px;
+      padding: 24px;
+    }
+
+    .screen {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      min-height: 100%;
+      padding: 28px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--stage-a), var(--stage-b) 54%, var(--stage-c));
+      color: var(--stage-ink);
+      isolation: isolate;
+      --stage-a: #f9df6d;
+      --stage-b: #f56f46;
+      --stage-c: #1c7378;
+      --stage-ink: #fff8e7;
+    }
+
+    .screen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 38px 38px;
+      mix-blend-mode: soft-light;
+    }
+
+    .badge {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(16, 19, 23, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+    }
+
+    .big-text {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      width: min(100%, 680px);
+      text-align: center;
+      line-height: 0.92;
+      font-size: clamp(3rem, var(--message-size), 9rem);
+      font-weight: 950;
+      text-wrap: balance;
+      overflow-wrap: anywhere;
+      text-shadow: 0 0.08em 0.22em rgba(16, 19, 23, 0.28);
+      --message-size: 12vw;
+    }
+
+    .big-text.serif {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 900;
+    }
+
+    .big-text.script {
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-style: italic;
+      font-weight: 850;
+    }
+
+    .big-text.uppercase {
+      text-transform: uppercase;
+    }
+
+    .big-text.outline {
+      color: transparent;
+      -webkit-text-stroke: 0.035em var(--stage-ink);
+      text-shadow: 0 0.08em 0.22em rgba(16, 19, 23, 0.18);
+    }
+
+    .big-text.soft {
+      font-weight: 700;
+    }
+
+    .preview-note {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      z-index: 1;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(16, 19, 23, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      font-size: 0.78rem;
+      backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .preview {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .grid-2,
+      .checks {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="panel">
+      <div>
+        <h1>Big Message Control</h1>
+        <p class="lead">This page talks directly to the server running on your PC. Save here, and the display updates live.</p>
+      </div>
+
+      <div class="field">
+        <label for="adminKey">Admin Key</label>
+        <input id="adminKey" type="password" placeholder="Enter your admin key" />
+      </div>
+
+      <div class="field">
+        <label for="message">Message</label>
+        <textarea id="message">You Look Fantastic</textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="label">Corner Label</label>
+          <input id="label" value="Compliment" />
+        </div>
+        <div class="field">
+          <label for="size">Size</label>
+          <input id="size" value="12vw" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="theme">Theme</label>
+          <select id="theme">
+            <option value="sunset">Sunset</option>
+            <option value="midnight">Midnight</option>
+            <option value="mint">Mint</option>
+            <option value="rose">Rose</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="font">Font</label>
+          <select id="font">
+            <option value="sans">Sans</option>
+            <option value="serif">Serif</option>
+            <option value="script">Script</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="section-title">Effects</div>
+        <div class="checks">
+          <label class="check"><input id="uppercase" type="checkbox" checked /> Uppercase</label>
+          <label class="check"><input id="outline" type="checkbox" /> Outline</label>
+          <label class="check"><input id="soft" type="checkbox" /> Soft</label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveButton" type="button">Save Live</button>
+        <button class="secondary" id="loadButton" type="button">Load Current</button>
+      </div>
+
+      <p class="status" id="statusText">Waiting for your PC server...</p>
+    </section>
+
+    <section class="preview">
+      <div class="screen" id="screen">
+        <div class="badge" id="previewLabel">Compliment</div>
+        <p class="big-text uppercase" id="previewMessage">You Look Fantastic</p>
+        <div class="preview-note">Preview</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const themes = {
+      sunset: ["#f9df6d", "#f56f46", "#1c7378", "#fff8e7"],
+      midnight: ["#15131c", "#315b91", "#f4c15d", "#fff6dc"],
+      mint: ["#cbf2db", "#27887f", "#17353a", "#f7fff9"],
+      rose: ["#ffe1e9", "#cf4265", "#35233a", "#fff4f7"]
+    };
+
+    const adminKey = document.querySelector("#adminKey");
+    const message = document.querySelector("#message");
+    const label = document.querySelector("#label");
+    const theme = document.querySelector("#theme");
+    const font = document.querySelector("#font");
+    const size = document.querySelector("#size");
+    const uppercase = document.querySelector("#uppercase");
+    const outline = document.querySelector("#outline");
+    const soft = document.querySelector("#soft");
+    const previewMessage = document.querySelector("#previewMessage");
+    const previewLabel = document.querySelector("#previewLabel");
+    const screen = document.querySelector("#screen");
+    const statusText = document.querySelector("#statusText");
+    const saveButton = document.querySelector("#saveButton");
+    const loadButton = document.querySelector("#loadButton");
+
+    function formData() {
+      return {
+        message: message.value.trim() || "Say it big",
+        label: label.value.trim() || "Notice",
+        theme: theme.value,
+        font: font.value,
+        size: size.value.trim() || "12vw",
+        uppercase: uppercase.checked,
+        outline: outline.checked,
+        soft: soft.checked
+      };
+    }
+
+    function applyTheme(themeName) {
+      const [a, b, c, ink] = themes[themeName] || themes.sunset;
+      screen.style.setProperty("--stage-a", a);
+      screen.style.setProperty("--stage-b", b);
+      screen.style.setProperty("--stage-c", c);
+      screen.style.setProperty("--stage-ink", ink);
+    }
+
+    function renderPreview() {
+      const data = formData();
+      previewMessage.textContent = data.message;
+      previewLabel.textContent = data.label;
+      previewMessage.classList.remove("serif", "script", "uppercase", "outline", "soft");
+      if (data.font === "serif" || data.font === "script") {
+        previewMessage.classList.add(data.font);
+      }
+      if (data.uppercase) {
+        previewMessage.classList.add("uppercase");
+      }
+      if (data.outline) {
+        previewMessage.classList.add("outline");
+      }
+      if (data.soft) {
+        previewMessage.classList.add("soft");
+      }
+      previewMessage.style.setProperty("--message-size", data.size);
+      applyTheme(data.theme);
+    }
+
+    function fillForm(data) {
+      message.value = data.message || "You Look Fantastic";
+      label.value = data.label || "Compliment";
+      theme.value = data.theme || "sunset";
+      font.value = data.font || "sans";
+      size.value = data.size || "12vw";
+      uppercase.checked = Boolean(data.uppercase);
+      outline.checked = Boolean(data.outline);
+      soft.checked = Boolean(data.soft);
+      renderPreview();
+    }
+
+    async function loadCurrent() {
+      const response = await fetch("/api/state");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      fillForm(await response.json());
+      statusText.textContent = "Loaded current settings from your PC.";
+    }
+
+    async function saveCurrent() {
+      const response = await fetch("/api/state", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": adminKey.value
+        },
+        body: JSON.stringify(formData())
+      });
+
+      if (!response.ok) {
+        const details = await response.json().catch(() => ({}));
+        throw new Error(details.error || `HTTP ${response.status}`);
+      }
+
+      statusText.textContent = "Saved. The display should update immediately.";
+    }
+
+    [message, label, theme, font, size, uppercase, outline, soft].forEach((element) => {
+      element.addEventListener("input", renderPreview);
+      element.addEventListener("change", renderPreview);
+    });
+
+    loadButton.addEventListener("click", async () => {
+      try {
+        await loadCurrent();
+      } catch (error) {
+        statusText.textContent = `Could not load: ${error.message}`;
+      }
+    });
+
+    saveButton.addEventListener("click", async () => {
+      try {
+        await saveCurrent();
+      } catch (error) {
+        statusText.textContent = `Could not save: ${error.message}`;
+      }
+    });
+
+    renderPreview();
+    loadCurrent().catch(() => {
+      statusText.textContent = "Start the Python server on your PC, then load current settings.";
+    });
+  </script>
+</body>
+</html>

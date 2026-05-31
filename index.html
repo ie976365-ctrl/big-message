@@ -81,14 +81,14 @@
       color: var(--status-text);
       font-size: 0.82rem;
       font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
       backdrop-filter: blur(12px);
     }
 
     .label {
       top: 18px;
       left: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
     .status {
@@ -154,12 +154,10 @@
   <main class="stage">
     <div class="label" id="messageLabel">Compliment</div>
     <h1 class="message uppercase" id="messageText">You Look Fantastic</h1>
-    <div class="status" id="syncStatus">Loading remote settings...</div>
+    <div class="status" id="syncStatus">Connecting to your PC...</div>
   </main>
 
   <script>
-    const SETTINGS_URL = "settings.json";
-    const REFRESH_MS = 5000;
     const defaultSettings = {
       message: "You Look Fantastic",
       label: "Compliment",
@@ -181,7 +179,6 @@
     const messageText = document.querySelector("#messageText");
     const messageLabel = document.querySelector("#messageLabel");
     const syncStatus = document.querySelector("#syncStatus");
-    let lastSignature = "";
 
     function setTheme(themeName) {
       const [a, b, c, ink] = themes[themeName] || themes.sunset;
@@ -193,12 +190,6 @@
 
     function applySettings(settings) {
       const next = { ...defaultSettings, ...settings };
-      const signature = JSON.stringify(next);
-      if (signature === lastSignature) {
-        return false;
-      }
-
-      lastSignature = signature;
       messageText.textContent = next.message || defaultSettings.message;
       messageLabel.textContent = next.label || defaultSettings.label;
       document.documentElement.style.setProperty("--message-size", next.size || defaultSettings.size);
@@ -218,38 +209,41 @@
       }
 
       setTheme(next.theme);
-      return true;
     }
 
-    function formatTime(date) {
-      return new Intl.DateTimeFormat(undefined, {
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit"
-      }).format(date);
-    }
-
-    async function loadSettings() {
-      try {
-        const response = await fetch(`${SETTINGS_URL}?t=${Date.now()}`, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const settings = await response.json();
-        const changed = applySettings(settings);
-        syncStatus.textContent = changed
-          ? `Updated ${formatTime(new Date())}`
-          : `Checked ${formatTime(new Date())}`;
-      } catch (error) {
-        applySettings(defaultSettings);
-        syncStatus.textContent = "Using saved display settings";
-        console.error("Could not load remote settings.", error);
+    async function loadCurrent() {
+      const response = await fetch("/api/state");
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+      const state = await response.json();
+      applySettings(state);
+      syncStatus.textContent = "Connected to your PC";
     }
 
-    loadSettings();
-    window.setInterval(loadSettings, REFRESH_MS);
+    function startLiveUpdates() {
+      const events = new EventSource("/api/events");
+      events.onmessage = (event) => {
+        applySettings(JSON.parse(event.data));
+        syncStatus.textContent = "Live updates active";
+      };
+      events.onerror = () => {
+        syncStatus.textContent = "Trying to reconnect...";
+      };
+    }
+
+    async function init() {
+      try {
+        await loadCurrent();
+      } catch (error) {
+        console.error(error);
+        applySettings(defaultSettings);
+        syncStatus.textContent = "Could not reach your PC server";
+      }
+      startLiveUpdates();
+    }
+
+    init();
   </script>
 </body>
 </html>
